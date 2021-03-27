@@ -1,6 +1,7 @@
 package com.io.t11.reportingservice.config;
 
 import com.io.t11.reportingservice.service.ReportServiceSubscriber;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -21,7 +22,7 @@ public class RedisConfig {
         return new JedisConnectionFactory(redisStandaloneConfiguration);
     }
 
-    @Bean
+   /* @Bean
     String orderService() {
         return "validationService";
     }
@@ -46,21 +47,42 @@ public class RedisConfig {
         return new ChannelTopic(orderService());
     }
 
+    */
+
     @Bean
     JedisPool jedisPool() {
         return new JedisPool("redis-18040.c257.us-east-1-3.ec2.cloud.redislabs.com", 18040, "default", "TGYqAObAPjsrZEd5KbDnzBexK5MYWTBS");
     }
 
-    @Bean
-    MessageListenerAdapter messageListener() {
+
+    @Bean("orderServiceListener")
+    MessageListenerAdapter orderServiceListener() {
         return new MessageListenerAdapter(new ReportServiceSubscriber(), "onMessage");
     }
 
+    @Bean("tradeServiceListener")
+    MessageListenerAdapter tradeServiceListener() {
+        return new MessageListenerAdapter(new ReportServiceSubscriber(), "onMessage");
+    }
+
+    @Bean("exchangeServiceListener")
+    MessageListenerAdapter exchangeServiceListener() {
+        return new MessageListenerAdapter(new ReportServiceSubscriber(), "onMessage");
+    }
+
+    @Bean("clientConnectivity")
+    MessageListenerAdapter clientConnectivity() {
+        return  new MessageListenerAdapter(new ReportServiceSubscriber(), "onMessage");
+    }
+
     @Bean
-    RedisMessageListenerContainer redisContainer() {
+    RedisMessageListenerContainer redisContainer( @Qualifier("orderServiceListener") MessageListenerAdapter orderServiceListener,
+                                                  @Qualifier("tradeServiceListener") MessageListenerAdapter tradeServiceListener, @Qualifier("exchangeServiceListener") MessageListenerAdapter exchangeServiceListener) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(messageListener(), registerTopic());
+        container.addMessageListener(orderServiceListener, new ChannelTopic("validationService"));
+        container.addMessageListener(tradeServiceListener, new ChannelTopic("tradeService"));
+        container.addMessageListener(exchangeServiceListener, new ChannelTopic("exchangeService"));
         return container;
     }
 
