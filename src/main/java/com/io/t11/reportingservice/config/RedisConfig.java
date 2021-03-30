@@ -77,12 +77,17 @@ public class RedisConfig {
 
     @Bean
     RedisMessageListenerContainer redisContainer( @Qualifier("orderServiceListener") MessageListenerAdapter orderServiceListener,
-                                                  @Qualifier("tradeServiceListener") MessageListenerAdapter tradeServiceListener, @Qualifier("exchangeServiceListener") MessageListenerAdapter exchangeServiceListener) {
+                                                  @Qualifier("tradeServiceListener") MessageListenerAdapter tradeServiceListener,
+                                                  @Qualifier("exchangeServiceListener") MessageListenerAdapter exchangeServiceListener) {
+
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+
         container.setConnectionFactory(jedisConnectionFactory());
+
         container.addMessageListener(orderServiceListener, new ChannelTopic("validationService"));
         container.addMessageListener(tradeServiceListener, new ChannelTopic("tradeService"));
         container.addMessageListener(exchangeServiceListener, new ChannelTopic("exchangeService"));
+
         return container;
     }
 
